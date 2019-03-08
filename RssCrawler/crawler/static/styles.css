@@ -1,0 +1,7 @@
+.field-summary, .field-title {
+    text-align: right;
+}
+.column-summary,.column-title,.column-pub_date,.column-img_url
+{
+    text-align: center;
+}

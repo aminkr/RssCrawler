@@ -1,0 +1,42 @@
+version: '2'
+services:
+  postgres:
+    image: postgres
+    volumes:
+      - ./db-data/pg:/var/lib/postgresql
+    container_name: postgres
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: pgdb
+  crawler:
+    build:
+       context: .
+       dockerfile: './Dockerfile'
+    image: 'crawler:1.0.0'
+    tty: true
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+  celery_worker:
+    container_name: 'celery_worker'
+    image: 'crawler:1.0.0'
+    tty: true
+    command: 'python -m celery -A RssCrawler worker --uid 10 -l error'
+    depends_on:
+      - crawler
+      - redis
+  celery_beat:
+    container_name: 'celery_beat'
+    image: 'crawler:1.0.0'
+    tty: true
+    command: 'python -m celery -A RssCrawler beat --pidfile file  -l error'
+    depends_on:
+      - crawler
+      - redis
+  redis:
+    container_name: redis
+    image: redis
+    volumes:
+      - ./db-data/redis:/data

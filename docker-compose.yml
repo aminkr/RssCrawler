@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres
     volumes:
-      - ./db-data/pg:/var/lib/postgresql
+      - ./db-data/pg:/var/lib/postgresql/data
     container_name: postgres
     environment:
       TZ: Asia/Tehran

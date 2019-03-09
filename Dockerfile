@@ -1,12 +1,10 @@
-FROM python:3.6-alpine
+FROM python:3.6-jessie
 COPY ./requirements.txt /home
 WORKDIR /home
-RUN \
- apk add --no-cache postgresql-libs && \
- apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
- python3 -m pip install -r requirements.txt --no-cache-dir && \
- apk --purge del .build-deps
-RUN pip install -r requirements.txt
+RUN apt-get update && \
+    apt-get install -y netcat tzdata && \
+    pip install -r requirements.txt
+
 COPY RssCrawler /home/RssCrawler
 COPY ./script.sh /home/RssCrawler
 WORKDIR /home/RssCrawler

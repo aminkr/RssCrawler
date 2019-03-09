@@ -6,5 +6,4 @@ feedparser==5.2.1
 requests==2.21.0
 beautifulsoup4==4.7.1
 colorlog==4.0.2
-django-jalali==3.1.0
 feedparser==5.2.1

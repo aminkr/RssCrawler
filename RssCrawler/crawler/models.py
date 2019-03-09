@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
-from django_jalali.db import models as jmodels
 from django.utils.html import format_html
 
 # Create your models here.
@@ -33,7 +32,7 @@ class RssItems(models.Model):
 class News(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.TextField()
-    pub_date = jmodels.jDateTimeField(null=False)
+    pub_date = models.DateTimeField(null=False)
     img_url = models.TextField(null=False)
     summary = models.TextField(null=True)
     body = models.TextField(null=True)

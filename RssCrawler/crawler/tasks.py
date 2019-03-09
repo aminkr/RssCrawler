@@ -11,45 +11,51 @@ import pytz
 
 @task
 def news_parser(oid):
-    item = RssItems.objects.get(pk=oid)
-    response = requests.get(item.link)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    channel_desc = settings.CHANNELS_DESCRIPTIONS[item.channel_link]
-    spec = channel_desc["specifier"]
+    try:
+        item = RssItems.objects.get(pk=oid)
+        response = requests.get(item.link)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        channel_desc = settings.CHANNELS_DESCRIPTIONS[item.channel_link]
+        spec = channel_desc["specifier"]
 
-    img = soup.find('img', **{spec: channel_desc["img"]})
-    title = soup.find(channel_desc["title"])
-    summary = soup.find(channel_desc["summary"])
-    body = soup.find(**{spec: channel_desc["body"]})
-    pub_date = item.pub_date
+        img = soup.find('img', **{spec: channel_desc["img"]})
+        title = soup.find(channel_desc["title"])
+        summary = soup.find(channel_desc["summary"])
+        body = soup.find(**{spec: channel_desc["body"]})
+        pub_date = item.pub_date
 
-    img_src = img.get('src') if img is not None else ""
-    title_str = title.get_text(separator="\n") if title is not None else ""
-    summary_str = summary.get_text(separator="\n") if summary is not None else ""
-    body_str = body.get_text(separator="\n") if body is not None else ""
+        img_src = img.get('src') if img is not None else ""
+        title_str = title.get_text(separator="\n") if title is not None else ""
+        summary_str = summary.get_text(separator="\n") if summary is not None else ""
+        body_str = body.get_text(separator="\n") if body is not None else ""
 
-    obj = News(title=title_str, pub_date=pub_date, img_url=img_src, summary=summary_str, body=body_str)
-    obj.save()
+        obj = News(title=title_str, pub_date=pub_date, img_url=img_src, summary=summary_str, body=body_str)
+        obj.save()
 
+    except Exception:
+        logger.error('an error raised in parser worker')
 
 @task
 def rss_crawler():
+    logger.info('crawler task started')
     rss_urls = []
     try:
         channels = Channels.objects.all()
         rss_urls = [channel.rss_url for channel in channels]
-    except Exception:
-        pass
+
+    except BaseException:
+        logger.info('maybe this object was not created yet')
+
 
     for rss in rss_urls:
         feed = feedparser.parse(rss)
+        
         channel_link = feed["channel"]["link"]
         items = feed["items"]
-
         try:
             channel_desc = settings.CHANNELS_DESCRIPTIONS[channel_link]
         except KeyError:
-            logger.error("can't find channel description for link {}".format(channel_link))
+            logger.error("couldn't find channel description for link {}".format(channel_link))
             continue
 
         for item in items:

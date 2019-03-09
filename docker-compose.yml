@@ -6,6 +6,7 @@ services:
       - ./db-data/pg:/var/lib/postgresql
     container_name: postgres
     environment:
+      TZ: Asia/Tehran
       POSTGRES_USER: pguser
       POSTGRES_PASSWORD: pgpass
       POSTGRES_DB: pgdb
@@ -14,6 +15,9 @@ services:
        context: .
        dockerfile: './Dockerfile'
     image: 'crawler:1.0.0'
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     tty: true
     ports:
       - "8000:8000"
@@ -22,16 +26,40 @@ services:
   celery_worker:
     container_name: 'celery_worker'
     image: 'crawler:1.0.0'
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     tty: true
-    command: 'python -m celery -A RssCrawler worker --uid 10 -l error'
+    command: >
+      /bin/sh -c "
+      while ! nc -z crawler 8000;
+      do
+      echo waiting for crawler app;
+      sleep 3;
+      done;
+      echo Connected!;
+      python -m celery -A RssCrawler worker -l error
+      "
     depends_on:
       - crawler
       - redis
   celery_beat:
     container_name: 'celery_beat'
     image: 'crawler:1.0.0'
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     tty: true
-    command: 'python -m celery -A RssCrawler beat --pidfile file  -l error'
+    command: >
+      /bin/sh -c "
+      while ! nc -z crawler 8000;
+      do
+      echo waiting for crawler app;
+      sleep 3;
+      done;
+      echo Connected!;
+      python -m celery -A RssCrawler beat -l error
+      "
     depends_on:
       - crawler
       - redis
